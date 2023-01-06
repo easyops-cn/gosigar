@@ -18,6 +18,10 @@ import (
 	"syscall"
 )
 
+const (
+	maxBufSize = 64 * 1024
+)
+
 var system struct {
 	ticks uint64
 	btime uint64
@@ -106,13 +110,16 @@ func (self *FileSystemList) Get() error {
 	err := readFile(getMountTableFileName(), func(line string) bool {
 		fields := strings.Fields(line)
 
-		fs := FileSystem{}
-		fs.DevName = fields[0]
-		fs.DirName = fields[1]
-		fs.SysTypeName = fields[2]
-		fs.Options = fields[3]
+		if len(fields) >= 4 {
+			fs := FileSystem{}
+			fs.DevName = fields[0]
+			fs.DirName = fields[1]
+			fs.SysTypeName = fields[2]
+			fs.Options = fields[3]
 
-		fslist = append(fslist, fs)
+			fslist = append(fslist, fs)
+
+		}
 
 		return true
 	})
@@ -376,7 +383,7 @@ func readFile(file string, handler func(string) bool) error {
 		return err
 	}
 
-	reader := bufio.NewReader(bytes.NewBuffer(contents))
+	reader := bufio.NewReaderSize(bytes.NewBuffer(contents), maxBufSize)
 
 	for {
 		line, _, err := reader.ReadLine()
